@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NeoDrive</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="page fade-in">
+
+    <!-- Intro Animation -->
+    <div id="introAnimation" class="intro-animation">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="intro-logo">
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="container">
+        <header>
+            <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+            <h1>Welcome, {{ username }}</h1>
+            <p class="subtitle">Your futuristic file vault</p>
+
+            <a href="/upload" class="primary-btn">Upload File</a>
+            <a href="/logout" class="ghost-btn">Logout</a>
+        </header>
+
+        <section class="card">
+            <h2>Your Files</h2>
+
+            {% if files %}
+            <ul class="file-list">
+                {% for file in files %}
+                <li class="file-item">
+                    <span class="file-name">{{ file }}</span>
+                    <div class="file-actions">
+                        <a href="/download/{{ file }}" class="ghost-btn">Download</a>
+                        <a href="/delete/{{ file }}" class="danger-btn">Delete</a>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty">No files yet. Upload one to get started.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <script>
+        // Remove intro animation completely
+        setTimeout(() => {
+            const intro = document.getElementById("introAnimation");
+            if (intro) intro.remove();
+        }, 1500);
+    </script>
+
+</body>
+</html>

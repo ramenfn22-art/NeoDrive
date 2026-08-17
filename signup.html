@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Account</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="page">
+    <div class="container">
+        <header>
+            <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+            <h1>Create Your NeoDrive Account</h1>
+            <p class="subtitle">Start your futuristic storage journey</p>
+        </header>
+
+        <section class="card">
+            <form method="POST" class="upload-form">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button class="primary-btn">Sign Up</button>
+            </form>
+
+            <a href="/login" class="ghost-btn">Already have an account?</a>
+        </section>
+    </div>
+
+    <script>
+        document.body.classList.add("fade-in");
+    </script>
+</body>
+</html>
