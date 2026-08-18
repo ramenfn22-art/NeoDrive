@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Viewer - NeoDrive</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="page fade-in">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-top">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo">
+            <h2>NeoDrive</h2>
+        </div>
+
+        <a href="/" class="sidebar-link">🏠 Home</a>
+        <a href="/upload" class="sidebar-link">⬆ Upload</a>
+        <a href="/viewer" class="sidebar-link">🖼 File Viewer</a>
+        <a href="/logout" class="sidebar-link">🚪 Logout</a>
+    </div>
+
+    <div class="container">
+
+        <header class="home-header">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+            <h1>File Viewer</h1>
+            <p class="subtitle">Preview your stored files</p>
+        </header>
+
+        <section class="card">
+            {% if files %}
+            <ul class="file-grid">
+                {% for file in files %}
+                {% set ext = file.split('.')[-1].lower() %}
+
+                <li class="file-card">
+
+                    {% if ext in ['png','jpg','jpeg','gif','webp'] %}
+                        <img src="/download/{{ file }}" class="viewer-img">
+                    {% elif ext in ['mp4','mov','webm'] %}
+                        <video class="viewer-video" controls>
+                            <source src="/download/{{ file }}">
+                        </video>
+                    {% elif ext == 'pdf' %}
+                        <iframe src="/download/{{ file }}" class="viewer-pdf"></iframe>
+                    {% elif ext in ['txt','md'] %}
+                        <div class="viewer-text">
+                            <iframe src="/download/{{ file }}" class="viewer-text-frame"></iframe>
+                        </div>
+                    {% else %}
+                        <div class="viewer-generic">📦 {{ file }}</div>
+                    {% endif %}
+
+                    <p class="file-title">{{ file }}</p>
+
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty">No files to preview.</p>
+            {% endif %}
+        </section>
+
+    </div>
+
+</body>
+</html>
