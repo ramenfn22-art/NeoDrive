@@ -24,8 +24,8 @@
 
         <header class="home-header">
             <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
-            <h1>File Viewer</h1>
-            <p class="subtitle">Preview your stored files</p>
+            <h1>Your Files</h1>
+            <p class="subtitle">Preview and open your stored files</p>
         </header>
 
         <section class="card">
@@ -37,28 +37,30 @@
                 <li class="file-card">
 
                     {% if ext in ['png','jpg','jpeg','gif','webp'] %}
-                        <img src="/download/{{ file }}" class="viewer-img">
+                        <img src="/download/{{ file }}" class="file-preview-img">
                     {% elif ext in ['mp4','mov','webm'] %}
-                        <video class="viewer-video" controls>
-                            <source src="/download/{{ file }}">
-                        </video>
+                        <div class="file-preview-icon">🎬</div>
                     {% elif ext == 'pdf' %}
-                        <iframe src="/download/{{ file }}" class="viewer-pdf"></iframe>
+                        <div class="file-preview-icon">📄</div>
                     {% elif ext in ['txt','md'] %}
-                        <div class="viewer-text">
-                            <iframe src="/download/{{ file }}" class="viewer-text-frame"></iframe>
-                        </div>
+                        <div class="file-preview-icon">📘</div>
                     {% else %}
-                        <div class="viewer-generic">📦 {{ file }}</div>
+                        <div class="file-preview-icon">📦</div>
                     {% endif %}
 
                     <p class="file-title">{{ file }}</p>
+
+                    <div class="file-buttons">
+                        <a href="/view/{{ file }}" class="primary-btn small-btn">View</a>
+                        <a href="/download/{{ file }}" class="ghost-btn small-btn">Download</a>
+                        <a href="/delete/{{ file }}" class="danger-btn small-btn">Delete</a>
+                    </div>
 
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="empty">No files to preview.</p>
+            <p class="empty">No files uploaded yet.</p>
             {% endif %}
         </section>
 

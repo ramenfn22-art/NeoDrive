@@ -1,108 +1,92 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Upload File</title>
+    <title>Upload File - NeoDrive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="page">
+
+<body class="page fade-in">
+
+    <div class="sidebar">
+        <div class="sidebar-top">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo">
+            <h2>NeoDrive</h2>
+        </div>
+
+        <a href="/" class="sidebar-link">🏠 Home</a>
+        <a href="/upload" class="sidebar-link">⬆ Upload</a>
+        <a href="/logout" class="sidebar-link">🚪 Logout</a>
+    </div>
+
     <div class="container">
 
         <header>
             <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
-            <h1>Upload to NeoDrive</h1>
-            <p class="subtitle">Drag & drop or browse your files</p>
+            <h1>Upload a File</h1>
+            <p class="subtitle">Drag a file or click to browse</p>
         </header>
 
-        <section class="card">
+        <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
 
-            <!-- Drag & Drop Zone -->
-            <div id="dropZone" class="drop-zone">
-                <p>Drag & Drop your file here</p>
-                <span>or click to browse</span>
-                <input type="file" id="fileInput" name="file">
+            <div class="drop-zone" id="dropZone">
+                <p class="dz-title">Drop your file here</p>
+                <span class="dz-subtitle">or click to browse</span>
+                <input type="file" name="file" id="fileInput">
             </div>
 
-            <!-- Upload Button -->
-            <button id="uploadBtn" class="primary-btn">Upload</button>
+            <p id="fileName" class="file-preview-text"></p>
 
-            <!-- Progress Bar -->
-            <div id="progressContainer" class="progress-container hidden">
-                <div id="progressBar" class="progress-bar"></div>
+            <div class="progress-container hidden" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
             </div>
 
-            <a href="/" class="ghost-btn">← Back</a>
-        </section>
+            <button type="submit" class="primary-btn upload-btn">Upload File</button>
+        </form>
     </div>
 
     <script>
-        document.body.classList.add("fade-in");
-
         const dropZone = document.getElementById("dropZone");
         const fileInput = document.getElementById("fileInput");
-        const uploadBtn = document.getElementById("uploadBtn");
+        const fileName = document.getElementById("fileName");
         const progressContainer = document.getElementById("progressContainer");
         const progressBar = document.getElementById("progressBar");
 
-        let selectedFile = null;
+        dropZone.addEventListener("click", () => fileInput.click());
 
-        // Highlight on drag
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = "Selected: " + fileInput.files[0].name;
+            }
+        });
+
         dropZone.addEventListener("dragover", (e) => {
             e.preventDefault();
             dropZone.classList.add("drag-over");
         });
 
-        // Remove highlight
         dropZone.addEventListener("dragleave", () => {
             dropZone.classList.remove("drag-over");
         });
 
-        // Handle dropped file
         dropZone.addEventListener("drop", (e) => {
             e.preventDefault();
             dropZone.classList.remove("drag-over");
 
-            selectedFile = e.dataTransfer.files[0];
-            dropZone.querySelector("p").textContent = selectedFile.name;
+            const file = e.dataTransfer.files[0];
+            fileInput.files = e.dataTransfer.files;
+            fileName.textContent = "Selected: " + file.name;
         });
 
-        // Clicking the zone opens file picker
-        dropZone.addEventListener("click", () => {
-            fileInput.click();
-        });
-
-        // File chosen manually
-        fileInput.addEventListener("change", () => {
-            selectedFile = fileInput.files[0];
-            dropZone.querySelector("p").textContent = selectedFile.name;
-        });
-
-        // Upload button
-        uploadBtn.addEventListener("click", () => {
-            if (!selectedFile) return;
-
+        document.querySelector(".upload-form").addEventListener("submit", () => {
             progressContainer.classList.remove("hidden");
-
-            const formData = new FormData();
-            formData.append("file", selectedFile);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "/upload", true);
-
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const percent = (event.loaded / event.total) * 100;
-                    progressBar.style.width = percent + "%";
-                }
-            };
-
-            xhr.onload = () => {
-                if (xhr.status === 200) {
-                    window.location = "/";
-                }
-            };
-
-            xhr.send(formData);
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 10;
+                progressBar.style.width = width + "%";
+                if (width >= 100) clearInterval(interval);
+            }, 100);
         });
     </script>
+
 </body>
 </html>

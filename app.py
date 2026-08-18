@@ -1,156 +1,167 @@
 import os
-import sqlite3
-from flask import Flask, render_template, request, redirect, session, send_from_directory, jsonify
+import json
+from flask import Flask, render_template, request, redirect, session, send_from_directory
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # change later
+app.secret_key = "supersecretkey"
 
-UPLOAD_ROOT = "uploads"
-os.makedirs(UPLOAD_ROOT, exist_ok=True)
+# Ensure uploads folder exists
+os.makedirs("uploads", exist_ok=True)
 
-
-# -----------------------------
-# Database Helper
-# -----------------------------
-def get_db():
-    return sqlite3.connect("users.db")
+# Ensure users.json exists
+if not os.path.exists("users.json"):
+    with open("users.json", "w") as f:
+        json.dump({}, f)
 
 
-# -----------------------------
-# Create User Folder
-# -----------------------------
-def user_folder(username):
-    path = os.path.join(UPLOAD_ROOT, username)
-    os.makedirs(path, exist_ok=True)
-    return path
+def load_users():
+    with open("users.json", "r") as f:
+        return json.load(f)
 
 
-# -----------------------------
-# Signup
-# -----------------------------
+def save_users(users):
+    with open("users.json", "w") as f:
+        json.dump(users, f)
+
+
+# Home Page
+@app.route("/")
+def index():
+    if "username" not in session:
+        return redirect("/login")
+
+    user_folder = os.path.join("uploads", session["username"])
+    os.makedirs(user_folder, exist_ok=True)
+
+    files = os.listdir(user_folder)
+    return render_template("index.html", username=session["username"], files=files)
+
+
+# Signup Page
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
+        username = request.form["username"]
+        password = request.form["password"]
 
-        if not username or not password:
-            return "Please enter a username and password"
+        users = load_users()
 
-        conn = get_db()
-        c = conn.cursor()
+        if username in users:
+            return "Username already exists", 400
 
-        # Check if username exists
-        c.execute("SELECT id FROM users WHERE username=?", (username,))
-        if c.fetchone():
-            return "Username already exists"
-
-        # Insert new user
-        c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-        conn.commit()
-        conn.close()
-
-        # Create user folder
-        user_folder(username)
+        users[username] = password
+        save_users(users)
 
         return redirect("/login")
 
     return render_template("signup.html")
 
 
-# -----------------------------
-# Login
-# -----------------------------
+# Login Page
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
+        username = request.form["username"]
+        password = request.form["password"]
 
-        conn = get_db()
-        c = conn.cursor()
-        c.execute("SELECT id FROM users WHERE username=? AND password=?", (username, password))
-        user = c.fetchone()
-        conn.close()
+        users = load_users()
 
-        if user:
+        if username in users and users[username] == password:
             session["username"] = username
             return redirect("/")
-        else:
-            return "Invalid username or password"
+
+        return "Invalid login", 400
 
     return render_template("login.html")
 
 
-# -----------------------------
 # Logout
-# -----------------------------
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
 
-# -----------------------------
-# Home (User Files)
-# -----------------------------
-@app.route("/")
-def index():
-    if "username" not in session:
-        return redirect("/login")
-
-    folder = user_folder(session["username"])
-    files = os.listdir(folder)
-
-    return render_template("index.html", files=files, username=session["username"])
-
-
-# -----------------------------
-# Upload (AJAX)
-# -----------------------------
+# Upload Page
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if "username" not in session:
         return redirect("/login")
 
-    folder = user_folder(session["username"])
-
     if request.method == "POST":
-        file = request.files.get("file")
-        if not file:
-            return jsonify({"error": "No file"}), 400
+        if "file" not in request.files:
+            return "No file part", 400
 
-        file.save(os.path.join(folder, file.filename))
-        return jsonify({"status": "ok"})
+        file = request.files["file"]
+
+        if file.filename == "":
+            return "No selected file", 400
+
+        filename = secure_filename(file.filename)
+
+        user_folder = os.path.join("uploads", session["username"])
+        os.makedirs(user_folder, exist_ok=True)
+
+        file.save(os.path.join(user_folder, filename))
+
+        return redirect("/viewer")
 
     return render_template("upload.html")
 
 
-# -----------------------------
-# Download
-# -----------------------------
+# File Viewer Grid Page
+@app.route("/viewer")
+def viewer():
+    if "username" not in session:
+        return redirect("/login")
+
+    user_folder = os.path.join("uploads", session["username"])
+    os.makedirs(user_folder, exist_ok=True)
+
+    files = os.listdir(user_folder)
+    return render_template("viewer.html", username=session["username"], files=files)
+
+
+# Fullscreen File Viewer
+@app.route("/view/<filename>")
+def view_file(filename):
+    if "username" not in session:
+        return redirect("/login")
+
+    user_folder = os.path.join("uploads", session["username"])
+    file_path = os.path.join(user_folder, filename)
+
+    if not os.path.exists(file_path):
+        return "File not found", 404
+
+    return render_template("view.html", filename=filename)
+
+
+# Download File
 @app.route("/download/<filename>")
 def download(filename):
-    folder = user_folder(session["username"])
-    return send_from_directory(folder, filename, as_attachment=True)
+    if "username" not in session:
+        return redirect("/login")
+
+    user_folder = os.path.join("uploads", session["username"])
+    return send_from_directory(user_folder, filename, as_attachment=False)
 
 
-# -----------------------------
-# Delete
-# -----------------------------
+# Delete File
 @app.route("/delete/<filename>")
 def delete(filename):
-    folder = user_folder(session["username"])
-    path = os.path.join(folder, filename)
+    if "username" not in session:
+        return redirect("/login")
 
-    if os.path.exists(path):
-        os.remove(path)
+    user_folder = os.path.join("uploads", session["username"])
+    file_path = os.path.join(user_folder, filename)
 
-    return redirect("/")
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    return redirect("/viewer")
 
 
-# -----------------------------
-# Run
-# -----------------------------
 if __name__ == "__main__":
     app.run(debug=True)

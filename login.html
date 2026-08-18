@@ -1,30 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>Login - NeoDrive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="page">
-    <div class="container">
-        <header>
-            <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
-            <h1>Login to NeoDrive</h1>
-            <p class="subtitle">Access your futuristic vault</p>
-        </header>
 
-        <section class="card">
-            <form method="POST" class="upload-form">
-                <input type="text" name="username" placeholder="Username" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <button class="primary-btn">Login</button>
+<body class="page fade-in">
+
+    <div class="container auth-container">
+
+        <div class="auth-card">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="auth-logo">
+
+            <h1 class="auth-title">Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to your vault</p>
+
+            <form action="/login" method="POST">
+
+                <input type="text" name="username" placeholder="Username" class="auth-input" required>
+                <input type="password" name="password" placeholder="Password" class="auth-input" required>
+
+                <button type="submit" class="primary-btn auth-btn">Login</button>
             </form>
 
-            <a href="/signup" class="ghost-btn">Create an account</a>
-        </section>
+            <p class="auth-switch">
+                New here?
+                <a href="/signup" class="ghost-btn small-btn">Create Account</a>
+            </p>
+        </div>
+
     </div>
 
-    <script>
-        document.body.classList.add("fade-in");
-    </script>
 </body>
 </html>
