@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload File - NeoDrive</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="page fade-in">
+
+    <div class="sidebar">
+        <div class="sidebar-top">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo">
+            <h2>NeoDrive</h2>
+        </div>
+
+        <a href="/" class="sidebar-link">🏠 Home</a>
+        <a href="/upload" class="sidebar-link">⬆ Upload</a>
+        <a href="/logout" class="sidebar-link">🚪 Logout</a>
+    </div>
+
+    <div class="container">
+
+        <header>
+            <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+            <h1>Upload a File</h1>
+            <p class="subtitle">Drag a file or click to browse</p>
+        </header>
+
+        <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+
+            <div class="drop-zone" id="dropZone">
+                <p class="dz-title">Drop your file here</p>
+                <span class="dz-subtitle">or click to browse</span>
+                <input type="file" name="file" id="fileInput">
+            </div>
+
+            <p id="fileName" class="file-preview-text"></p>
+
+            <div class="progress-container hidden" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <button type="submit" class="primary-btn upload-btn">Upload File</button>
+        </form>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const fileName = document.getElementById("fileName");
+        const progressContainer = document.getElementById("progressContainer");
+        const progressBar = document.getElementById("progressBar");
+
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = "Selected: " + fileInput.files[0].name;
+            }
+        });
+
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("drag-over");
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("drag-over");
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("drag-over");
+
+            const file = e.dataTransfer.files[0];
+            fileInput.files = e.dataTransfer.files;
+            fileName.textContent = "Selected: " + file.name;
+        });
+
+        document.querySelector(".upload-form").addEventListener("submit", () => {
+            progressContainer.classList.remove("hidden");
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 10;
+                progressBar.style.width = width + "%";
+                if (width >= 100) clearInterval(interval);
+            }, 100);
+        });
+    </script>
+
+</body>
+</html>

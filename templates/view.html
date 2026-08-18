@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Viewing {{ filename }} - NeoDrive</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="page fade-in">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-top">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo">
+            <h2>NeoDrive</h2>
+        </div>
+
+        <a href="/" class="sidebar-link">🏠 Home</a>
+        <a href="/upload" class="sidebar-link">⬆ Upload</a>
+        <a href="/viewer" class="sidebar-link">🖼 File Viewer</a>
+        <a href="/logout" class="sidebar-link">🚪 Logout</a>
+    </div>
+
+    <!-- Main Viewer -->
+    <div class="viewer-container">
+
+        <h1 class="viewer-title">{{ filename }}</h1>
+
+        <!-- Back Button -->
+        <div class="viewer-nav">
+            <a href="/viewer" class="ghost-btn back-btn">← Back to Viewer</a>
+        </div>
+
+        {% set ext = filename.split('.')[-1].lower() %}
+
+        <!-- IMAGE -->
+        {% if ext in ['png','jpg','jpeg','gif','webp'] %}
+            <img src="/download/{{ filename }}" class="viewer-full-img">
+
+        <!-- VIDEO -->
+        {% elif ext in ['mp4','mov','webm'] %}
+            <video class="viewer-full-video" controls>
+                <source src="/download/{{ filename }}">
+            </video>
+
+        <!-- PDF -->
+        {% elif ext == 'pdf' %}
+            <iframe src="/download/{{ filename }}" class="viewer-full-pdf"></iframe>
+
+        <!-- TEXT -->
+        {% elif ext in ['txt','md'] %}
+            <iframe src="/download/{{ filename }}" class="viewer-full-text"></iframe>
+
+        <!-- OTHER FILE TYPES -->
+        {% else %}
+            <div class="viewer-full-generic">
+                <p>📦 This file type cannot be previewed.</p>
+                <a href="/download/{{ filename }}" class="primary-btn">Download File</a>
+            </div>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
