@@ -1,1 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NeoDrive</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
+<body class="page fade-in">
+
+    <!-- Intro Animation -->
+    <div id="introAnimation" class="intro-animation">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="intro-logo">
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-top">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo">
+            <h2>NeoDrive</h2>
+        </div>
+
+       <a href="/" class="sidebar-link">🏠 Home</a>
+<a href="/upload" class="sidebar-link">⬆ Upload</a>
+<a href="/viewer" class="sidebar-link">🖼 File Viewer</a>
+<a href="/logout" class="sidebar-link">🚪 Logout</a>
+
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+
+        <header class="home-header">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+            <h1>Welcome, {{ username }}</h1>
+            <p class="subtitle">Your futuristic file vault</p>
+        </header>
+
+        <section class="card">
+            <h2>Your Files</h2>
+
+            {% if files %}
+            <ul class="file-grid">
+                {% for file in files %}
+                {% set ext = file.split('.')[-1].lower() %}
+
+                <li class="file-card">
+
+                    <!-- FILE PREVIEW -->
+                    {% if ext in ['png','jpg','jpeg','gif','webp'] %}
+                        <img src="/download/{{ file }}" class="file-preview-img">
+                    {% elif ext in ['mp4','mov','webm'] %}
+                        <div class="file-preview-icon">🎬</div>
+                    {% elif ext == 'pdf' %}
+                        <div class="file-preview-icon">📄</div>
+                    {% elif ext in ['txt','md'] %}
+                        <div class="file-preview-icon">📘</div>
+                    {% else %}
+                        <div class="file-preview-icon">📦</div>
+                    {% endif %}
+
+                    <!-- FILE NAME -->
+                    <p class="file-title">{{ file }}</p>
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="file-buttons">
+                        <a href="/download/{{ file }}" class="ghost-btn small-btn">Download</a>
+                        <a href="/delete/{{ file }}" class="danger-btn small-btn">Delete</a>
+                    </div>
+
+                </li>
+                {% endfor %}
+            </ul>
+
+            {% else %}
+            <p class="empty">No files yet. Upload one to get started.</p>
+            {% endif %}
+        </section>
+
+    </div>
+
+    <script>
+        // Remove intro animation after fade-out
+        setTimeout(() => {
+            const intro = document.getElementById("introAnimation");
+            if (intro) intro.remove();
+        }, 1500);
+    </script>
+
+</body>
+</html>
