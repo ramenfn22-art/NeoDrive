@@ -1,27 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Signup - NeoDrive</title>
+    <title>Create Account - NeoDrive</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body class="page fade-in">
+<body class="auth-page fade-in">
 
-    <div class="container">
-        <header>
-            <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
-            <h1>Create Account</h1>
-        </header>
+    <div class="auth-container">
 
-        <form action="/signup" method="POST" class="card">
-            <input type="text" name="username" placeholder="Username" required class="input">
-            <input type="password" name="password" placeholder="Password" required class="input">
-            <button type="submit" class="primary-btn">Sign Up</button>
-        </form>
+        <div class="auth-card">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="auth-logo">
 
-        <p style="text-align:center; margin-top:10px;">
-            <a href="/login" class="ghost-btn">Already have an account?</a>
-        </p>
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join NeoDrive and start storing your files securely</p>
+
+            <form method="POST" class="auth-form">
+
+                <label class="auth-label">Username</label>
+                <input type="text" name="username" class="auth-input" required>
+
+                <label class="auth-label">Password</label>
+                <input type="password" name="password" class="auth-input" required>
+
+                <button type="submit" class="primary-btn auth-btn">Create Account</button>
+            </form>
+
+            <p class="auth-switch">
+                Already have an account?
+                <a href="/login" class="auth-link">Log in</a>
+            </p>
+        </div>
+
     </div>
 
 </body>
