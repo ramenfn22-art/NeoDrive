@@ -35,13 +35,16 @@ app_cipher = Fernet(app_key)
 
 # === User storage helpers ===
 def load_users():
-    with open(USER_FILE, "r") as f:
-        return json.load(f)
+    try:
+        with open(USER_FILE, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError):
+        return {}
 
 
 def save_users(users):
     with open(USER_FILE, "w") as f:
-        json.dump(users, f)
+        json.dump(users, f, indent=4)
 
 
 # === Routes ===
