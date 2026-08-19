@@ -9,15 +9,20 @@ from cryptography.fernet import Fernet
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-# === Ensure base folders/files exist ===
-os.makedirs("uploads", exist_ok=True)
+# === Persistent data folder (Render-safe) ===
+os.makedirs("data", exist_ok=True)
+USER_FILE = os.path.join("data", "users.json")
 
-if not os.path.exists("users.json"):
-    with open("users.json", "w") as f:
+# === Ensure users.json exists ===
+if not os.path.exists(USER_FILE):
+    with open(USER_FILE, "w") as f:
         json.dump({}, f)
 
+# === Ensure uploads folder exists ===
+os.makedirs("uploads", exist_ok=True)
+
+# === App-level encryption key ===
 if not os.path.exists("secret.key"):
-    # App-level encryption key (only generated once)
     app_key = Fernet.generate_key()
     with open("secret.key", "wb") as f:
         f.write(app_key)
@@ -30,12 +35,12 @@ app_cipher = Fernet(app_key)
 
 # === User storage helpers ===
 def load_users():
-    with open("users.json", "r") as f:
+    with open(USER_FILE, "r") as f:
         return json.load(f)
 
 
 def save_users(users):
-    with open("users.json", "w") as f:
+    with open(USER_FILE, "w") as f:
         json.dump(users, f)
 
 
@@ -64,8 +69,9 @@ def signup():
         if username in users:
             return "Username already exists", 400
 
-        # Per-user encryption key
+        # Per-user encryption key (ASCII-safe)
         user_key = Fernet.generate_key().decode("ascii")
+
         users[username] = {
             "password": password,
             "key": user_key
@@ -119,23 +125,21 @@ def upload():
         user_folder = os.path.join("uploads", session["username"])
         os.makedirs(user_folder, exist_ok=True)
 
-        # Read raw bytes
         file_bytes = file.read()
 
-        # Get user key
         users = load_users()
         user_info = users.get(session["username"])
         if not user_info:
             return "User not found", 400
 
-        user_cipher = Fernet(user_info["key"].encode("utf-8"))
+        user_cipher = Fernet(user_info["key"].encode("ascii"))
 
-        # Double encryption: first user key, then app key
-        user_encrypted = user_cipher.encrypt(file_bytes)
-        fully_encrypted = app_cipher.encrypt(user_encrypted)
+        # Double encryption
+        encrypted_user = user_cipher.encrypt(file_bytes)
+        encrypted_final = app_cipher.encrypt(encrypted_user)
 
         with open(os.path.join(user_folder, filename), "wb") as f:
-            f.write(fully_encrypted)
+            f.write(encrypted_final)
 
         return redirect("/viewer")
 
@@ -159,17 +163,10 @@ def view_file(filename):
     if "username" not in session:
         return redirect("/login")
 
-    user_folder = os.path.join("uploads", session["username"])
-    file_path = os.path.join(user_folder, filename)
-
-    if not os.path.exists(file_path):
-        return "File not found", 404
-
-    # Decrypt for viewing (used by view.html via /download)
     return render_template("view.html", filename=filename)
 
 
-def decrypt_file_for_user(username, filename):
+def decrypt_file(username, filename):
     user_folder = os.path.join("uploads", username)
     file_path = os.path.join(user_folder, filename)
 
@@ -177,19 +174,20 @@ def decrypt_file_for_user(username, filename):
         return None
 
     with open(file_path, "rb") as f:
-        fully_encrypted = f.read()
+        encrypted_final = f.read()
 
     # First decrypt with app key
-    user_encrypted = app_cipher.decrypt(fully_encrypted)
+    encrypted_user = app_cipher.decrypt(encrypted_final)
 
-    # Then decrypt with user key
     users = load_users()
     user_info = users.get(username)
     if not user_info:
         return None
 
-    user_cipher = Fernet(user_info["key"].encode("utf-8"))
-    decrypted = user_cipher.decrypt(user_encrypted)
+    user_cipher = Fernet(user_info["key"].encode("ascii"))
+
+    # Then decrypt with user key
+    decrypted = user_cipher.decrypt(encrypted_user)
 
     return decrypted
 
@@ -199,11 +197,10 @@ def download(filename):
     if "username" not in session:
         return redirect("/login")
 
-    decrypted = decrypt_file_for_user(session["username"], filename)
+    decrypted = decrypt_file(session["username"], filename)
     if decrypted is None:
         return "File not found", 404
 
-    # Guess mimetype for better viewing
     mime_type, _ = mimetypes.guess_type(filename)
     if mime_type is None:
         mime_type = "application/octet-stream"
