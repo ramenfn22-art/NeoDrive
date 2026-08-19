@@ -1,20 +1,34 @@
 import os
 import json
-from flask import Flask, render_template, request, redirect, session, send_from_directory
+import mimetypes
+from io import BytesIO
+from flask import Flask, render_template, request, redirect, session, send_file
 from werkzeug.utils import secure_filename
+from cryptography.fernet import Fernet
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-# Ensure uploads folder exists
+# === Ensure base folders/files exist ===
 os.makedirs("uploads", exist_ok=True)
 
-# Ensure users.json exists
 if not os.path.exists("users.json"):
     with open("users.json", "w") as f:
         json.dump({}, f)
 
+if not os.path.exists("secret.key"):
+    # App-level encryption key (only generated once)
+    app_key = Fernet.generate_key()
+    with open("secret.key", "wb") as f:
+        f.write(app_key)
+else:
+    with open("secret.key", "rb") as f:
+        app_key = f.read()
 
+app_cipher = Fernet(app_key)
+
+
+# === User storage helpers ===
 def load_users():
     with open("users.json", "r") as f:
         return json.load(f)
@@ -25,7 +39,8 @@ def save_users(users):
         json.dump(users, f)
 
 
-# Home Page
+# === Routes ===
+
 @app.route("/")
 def index():
     if "username" not in session:
@@ -38,7 +53,6 @@ def index():
     return render_template("index.html", username=session["username"], files=files)
 
 
-# Signup Page
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -50,7 +64,13 @@ def signup():
         if username in users:
             return "Username already exists", 400
 
-        users[username] = password
+        # Per-user encryption key
+        user_key = Fernet.generate_key().decode("utf-8")
+
+        users[username] = {
+            "password": password,
+            "key": user_key
+        }
         save_users(users)
 
         return redirect("/login")
@@ -58,7 +78,6 @@ def signup():
     return render_template("signup.html")
 
 
-# Login Page
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -67,7 +86,7 @@ def login():
 
         users = load_users()
 
-        if username in users and users[username] == password:
+        if username in users and users[username]["password"] == password:
             session["username"] = username
             return redirect("/")
 
@@ -76,14 +95,12 @@ def login():
     return render_template("login.html")
 
 
-# Logout
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
 
-# Upload Page
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if "username" not in session:
@@ -103,14 +120,29 @@ def upload():
         user_folder = os.path.join("uploads", session["username"])
         os.makedirs(user_folder, exist_ok=True)
 
-        file.save(os.path.join(user_folder, filename))
+        # Read raw bytes
+        file_bytes = file.read()
+
+        # Get user key
+        users = load_users()
+        user_info = users.get(session["username"])
+        if not user_info:
+            return "User not found", 400
+
+        user_cipher = Fernet(user_info["key"].encode("utf-8"))
+
+        # Double encryption: first user key, then app key
+        user_encrypted = user_cipher.encrypt(file_bytes)
+        fully_encrypted = app_cipher.encrypt(user_encrypted)
+
+        with open(os.path.join(user_folder, filename), "wb") as f:
+            f.write(fully_encrypted)
 
         return redirect("/viewer")
 
     return render_template("upload.html")
 
 
-# File Viewer Grid Page
 @app.route("/viewer")
 def viewer():
     if "username" not in session:
@@ -123,7 +155,6 @@ def viewer():
     return render_template("viewer.html", username=session["username"], files=files)
 
 
-# Fullscreen File Viewer
 @app.route("/view/<filename>")
 def view_file(filename):
     if "username" not in session:
@@ -135,20 +166,57 @@ def view_file(filename):
     if not os.path.exists(file_path):
         return "File not found", 404
 
+    # Decrypt for viewing (used by view.html via /download)
     return render_template("view.html", filename=filename)
 
 
-# Download File
+def decrypt_file_for_user(username, filename):
+    user_folder = os.path.join("uploads", username)
+    file_path = os.path.join(user_folder, filename)
+
+    if not os.path.exists(file_path):
+        return None
+
+    with open(file_path, "rb") as f:
+        fully_encrypted = f.read()
+
+    # First decrypt with app key
+    user_encrypted = app_cipher.decrypt(fully_encrypted)
+
+    # Then decrypt with user key
+    users = load_users()
+    user_info = users.get(username)
+    if not user_info:
+        return None
+
+    user_cipher = Fernet(user_info["key"].encode("utf-8"))
+    decrypted = user_cipher.decrypt(user_encrypted)
+
+    return decrypted
+
+
 @app.route("/download/<filename>")
 def download(filename):
     if "username" not in session:
         return redirect("/login")
 
-    user_folder = os.path.join("uploads", session["username"])
-    return send_from_directory(user_folder, filename, as_attachment=False)
+    decrypted = decrypt_file_for_user(session["username"], filename)
+    if decrypted is None:
+        return "File not found", 404
+
+    # Guess mimetype for better viewing
+    mime_type, _ = mimetypes.guess_type(filename)
+    if mime_type is None:
+        mime_type = "application/octet-stream"
+
+    return send_file(
+        BytesIO(decrypted),
+        download_name=filename,
+        mimetype=mime_type,
+        as_attachment=False
+    )
 
 
-# Delete File
 @app.route("/delete/<filename>")
 def delete(filename):
     if "username" not in session:
