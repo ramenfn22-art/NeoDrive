@@ -65,8 +65,7 @@ def signup():
             return "Username already exists", 400
 
         # Per-user encryption key
-        user_key = Fernet.generate_key().decode("utf-8")
-
+        user_key = Fernet.generate_key().decode("ascii")
         users[username] = {
             "password": password,
             "key": user_key
@@ -233,4 +232,3 @@ def delete(filename):
 
 if __name__ == "__main__":
     app.run(debug=True)
-
