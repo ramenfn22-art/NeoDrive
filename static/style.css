@@ -593,3 +593,93 @@ h1 {
     background: rgba(0, 255, 255, 0.15);
     box-shadow: 0 0 15px #00ffff;
 }
+/* === Auth Page (Login + Signup) === */
+
+.auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: radial-gradient(circle at top, #0a0f1f, #000);
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-card {
+    background: rgba(10, 15, 31, 0.8);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+}
+
+.auth-logo {
+    width: 70px;
+    margin-bottom: 15px;
+}
+
+.auth-title {
+    color: #00ffff;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+    text-shadow: 0 0 10px #00ffff;
+}
+
+.auth-subtitle {
+    color: #e5e7eb;
+    font-size: 0.9rem;
+    margin-bottom: 25px;
+}
+
+.auth-label {
+    color: #e5e7eb;
+    text-align: left;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e5e7eb;
+    font-size: 1rem;
+    outline: none;
+    transition: 0.3s ease;
+}
+
+.auth-input:focus {
+    border-color: #00ffff;
+    box-shadow: 0 0 10px #00ffff;
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.auth-switch {
+    margin-top: 20px;
+    color: #e5e7eb;
+}
+
+.auth-link {
+    color: #00ffff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.auth-link:hover {
+    text-shadow: 0 0 10px #00ffff;
+}
