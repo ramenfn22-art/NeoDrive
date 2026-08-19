@@ -5,27 +5,30 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body class="page fade-in">
+<body class="auth-page fade-in">
 
-    <div class="container auth-container">
+    <div class="auth-container">
 
         <div class="auth-card">
             <img src="{{ url_for('static', filename='logo.png') }}" class="auth-logo">
 
             <h1 class="auth-title">Welcome Back</h1>
-            <p class="auth-subtitle">Sign in to your vault</p>
+            <p class="auth-subtitle">Log in to access your NeoDrive</p>
 
-            <form action="/login" method="POST">
+            <form method="POST" class="auth-form">
 
-                <input type="text" name="username" placeholder="Username" class="auth-input" required>
-                <input type="password" name="password" placeholder="Password" class="auth-input" required>
+                <label class="auth-label">Username</label>
+                <input type="text" name="username" class="auth-input" required>
 
-                <button type="submit" class="primary-btn auth-btn">Login</button>
+                <label class="auth-label">Password</label>
+                <input type="password" name="password" class="auth-input" required>
+
+                <button type="submit" class="primary-btn auth-btn">Log In</button>
             </form>
 
             <p class="auth-switch">
-                New here?
-                <a href="/signup" class="ghost-btn small-btn">Create Account</a>
+                Don’t have an account?
+                <a href="/signup" class="auth-link">Create one</a>
             </p>
         </div>
 
